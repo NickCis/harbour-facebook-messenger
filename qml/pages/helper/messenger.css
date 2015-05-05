@@ -1,0 +1,18 @@
+._s15 {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+[data-reactid='.0.1'] {
+    min-width: 100% !important;
+}
+
+[data-reactid='.0.1.$0'] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.hidden {
+    display: none!important;
+    visibility: hidden!important;
+}

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Icon=harbour-facebook-messenger
+Exec=harbour-facebook-messenger
+Name=Facebook Messenger
