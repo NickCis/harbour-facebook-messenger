@@ -43,17 +43,21 @@
         currentTouch = null;
     }, false);
 
-    function xDistance(t1, t2){
-        return t1.clientX - t2.clientX;
+    function pointDistance(t1, t2){
+        return [t1.clientX - t2.clientX, t1.clientY - t2.clientY];
     }
 
     document.addEventListener('touchmove', function(ev){
-        var distance = xDistance(event.changedTouches[0], currentTouch);
-        console.log("distance: "+distance);
-        if( distance < -200 && !isConversation)
-            showConversation();
-        else if(distance > 200 && isConversation)
-            showContactList();
+        var distance = pointDistance(event.changedTouches[0], currentTouch);
+        console.log("distance: "+distance[0]+ " y: "+distance[1]);
+        if(isConversation){
+            if(distance[0] > 200)
+                showContactList();
+        }else{
+            document.querySelector("[data-reactid='.0.1.$0.0.1.1.0.0']").scrollTop -= distance[1];
+            if(distance[0] < -200)
+                showConversation();
+        }
     }, false);
 
     window.addEventListener('load', function(){
