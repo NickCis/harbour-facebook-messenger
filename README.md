@@ -1,7 +1,7 @@
 # Facebook Messenger for SailfishOS
 
 The idea was taken from [Facebook Messenger Desktop](https://github.com/Aluxian/Facebook-Messenger-Desktop).
-In addition, many QtWebView hacks were taken from [WeCat](https://github.com/llelectronics/webcat).
+In addition, many QtWebView hacks were taken from [WebCat](https://github.com/llelectronics/webcat).
 
 Since April the 30th, facebook deprecated the XMMP protocol for chat. SailfishOS used that protocol in order to
 provide a chat client for that platform. That's why last OS update removed facebook chat.
