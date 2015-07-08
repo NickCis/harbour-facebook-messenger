@@ -29,6 +29,15 @@ class Console : public QObject {
 		void executeCommand(const std::string&);
 		void statusCommand(const std::string&);
 
+		QJsonArray friendsList;
+		QJsonArray conversations;
+		QJsonObject profiles;
+
+	protected slots:
+		void loginResponse(bool error, QString desc);
+		void getBasicInformationResponse(bool error, QJsonValue data);
+		void getUserInfoResponse(bool error, QJsonValue data);
+
 	private slots:
 		void readCommand();
 

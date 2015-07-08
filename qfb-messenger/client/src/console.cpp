@@ -1,6 +1,10 @@
 #include "console.h"
 #include <iostream>
 #include <QString>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonDocument>
 
 #include <termios.h>
 
@@ -14,6 +18,9 @@ void Console::run() {
 	cout << "QFb Messenger Client" << endl;
 	cout << "> " << flush;
 	connect(notifier, SIGNAL(activated(int)), this, SLOT(readCommand()));
+	connect(&qfb, SIGNAL(getBasicInformationResponse(bool, QJsonValue)), this, SLOT(getBasicInformationResponse(bool, QJsonValue)));
+	connect(&qfb, SIGNAL(getUserInfoResponse(bool, QJsonValue)), this, SLOT(getUserInfoResponse(bool, QJsonValue)));
+	connect(&qfb, SIGNAL(loginResponse(bool, QString)), this, SLOT(loginResponse(bool, QString)));
 }
 
 void Console::readCommand() {
@@ -66,8 +73,24 @@ void Console::executeCommand(const string& line) {
 			cout << flush;
 			return;
 		}
-	}else if(qline.startsWith("getConversations")){
-		qfb.getConversations();
+	}else if(qline.startsWith("getBasicInformation")){
+		qfb.getBasicInformation();
+	}else if(qline.startsWith("getUserInfo")){
+		qfb.getUserInfo(this->friendsList);
+	}else if(qline.startsWith("profile")){
+		QStringList list = qline.split(" ");
+		if(list.count() < 2){
+			cout << "profile <userid / list>" << endl;
+		}else{
+			if(list[1] == "list"){
+				QStringList keys = this->profiles.keys();
+				for(QStringList::const_iterator it= keys.begin(); it!=keys.end(); it++)
+					cout << "\t* " << (*it).toStdString() << endl;
+			}else{
+				QJsonDocument document;
+				cout << QString(QJsonDocument(this->profiles.value(list[1]).toObject()).toJson()).toStdString();
+			}
+		}
 	}
 
 	cout << "> " << flush;
@@ -85,4 +108,34 @@ void Console::showStdinKeyStrokes(){
 	tcgetattr(fileno(stdin), &tty);
 	tty.c_lflag |= ECHO;
 	tcsetattr(fileno(stdin), TCSANOW, &tty);
+}
+
+void Console::getBasicInformationResponse(bool error, QJsonValue data){
+	if(error){
+		cout << __func__ << " failed!" << endl;
+		return;
+	}
+
+	cout << __func__ << " :: ok!" << endl;
+	this->friendsList = data.toObject().value("friendsList").toArray();
+	this->conversations = data.toObject().value("conversations").toArray();
+}
+
+void Console::getUserInfoResponse(bool error, QJsonValue data){
+	if(error){
+		cout << __func__ << " failed!" << endl;
+		return;
+	}
+
+	cout << __func__ << " :: ok!" << endl;
+	this->profiles = data.toObject();
+}
+
+void Console::loginResponse(bool error, QString desc){
+	if(error){
+		cout << __func__ << " failed! : " << desc.toStdString() << endl;
+		return;
+	}
+
+	cout << __func__ << " :: ok!" << endl;
 }

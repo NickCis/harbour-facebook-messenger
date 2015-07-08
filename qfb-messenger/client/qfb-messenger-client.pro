@@ -1,8 +1,7 @@
 TEMPLATE = app
-TARGET = bin/qfb-messenger-client
-qfb-messenger-client.depends = ../qfb-messenger
+DESTDIR = bin
 
-LIBS += ../lib/libqfb-messenger.a
+LIBS += -L../lib/ -lqfb-messenger
 
 CONFIG += console
 

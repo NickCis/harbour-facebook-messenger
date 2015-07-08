@@ -1,6 +1,6 @@
 TEMPLATE = lib
 CONFIG += staticlib
-TARGET = lib/qfb-messenger
+DESTDIR = lib
 
 QT += network
 QT -= gui

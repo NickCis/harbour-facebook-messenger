@@ -18,6 +18,7 @@
 #define FB_INIT_ENDPOINT "login"
 #define FB_LOGIN_ENDPOINT "login/password/"
 #define FB_CONVERSATIONS_ENDPOINT "/"
+#define FB_USERINFO_ENDPOINT "chat/user_info/"
 
 #define FB_COOKIE_DOMAIN ".messenger.com"
 #define FB_COOKIE_PATH "/"
@@ -176,7 +177,7 @@ void QFbMessenger::loginFinished(QObject* obj){
 		emit loginResponse(true, reply->errorString());
 	}else{
 		QString response = QString(reply->readAll());
-		qDebug() << "Login response...\n" << response << '\n';
+		//qDebug() << "Login response...\n" << response << '\n';
 		emit loginResponse(false, "");
 	}
 
@@ -184,46 +185,123 @@ void QFbMessenger::loginFinished(QObject* obj){
 	reply->deleteLater();
 }
 
-void QFbMessenger::getConversations(){
+void QFbMessenger::getBasicInformation(){
 	QNetworkReply* reply = this->createRequest(FB_CONVERSATIONS_ENDPOINT);
 	QSignalMapper *mapper = new QSignalMapper(reply);
 	connect(reply, SIGNAL(finished()), mapper, SLOT(map()));
 	mapper->setMapping(reply, reply);
-	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(getConversationsFinished(QObject*)));
+	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(getBasicInformationFinished(QObject*)));
 }
 
-void QFbMessenger::getConversationsFinished(QObject* obj){
+void QFbMessenger::getBasicInformationFinished(QObject* obj){
 	QNetworkReply* reply = qobject_cast<QNetworkReply*>(obj);
 	QNetworkReply::NetworkError err = reply->error();
 
 	if(err != QNetworkReply::NoError){
 		qDebug() << "Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
-		emit loginResponse(true, reply->errorString());
+		emit getBasicInformationResponse(true, QJsonValue(reply->errorString()));
 	}else{
 		QString response = QString(reply->readAll());
 		//qDebug() << "GetConversations response...\n" << response << '\n';
-		QString json = this->getMatch("require\\(\"InitialJSLoader\"\\).handleServerJS\\((.*)\\);</script>", response);
-		//qDebug() << "json text...\n" << json;
-		QJsonDocument conversationsDoc(QJsonDocument::fromJson(json.toUtf8()));
-		QJsonArray requireArray = conversationsDoc.object().value("require").toArray();
-		for(QJsonArray::iterator it= requireArray.begin(); it != requireArray.end(); it++){
-			if((*it).isArray()){
-				qDebug() <<  (*it).toArray().first().toString();
-				if((*it).toArray().first().toString() == "MessengerMount"){
-					QJsonValue data = (*it).toArray()[3].toArray()[1].toObject().value("mercuryPayload");
-					//qDebug() << data;
-					QJsonArray conversations = data.toObject().value("threads").toArray();
-					for(QJsonArray::iterator itt=conversations.begin(); itt!=conversations.end(); itt++){
-						//qDebug() << (*itt);
-						qDebug() << "* " << (*itt).toObject().value("snippet_sender").toString() << ": " << (*itt).toObject().value("snippet").toString();
-					}
+		this->parseDtsg(response);
+		QJsonObject data;
+		data.insert("friendsList", QJsonValue(this->parseInitialChatFriendsList(response)));
+		//qDebug() << data.value("friendsList");
+		data.insert("conversations", QJsonValue(this->parseLastConversations(response)));
+		//qDebug() << data.value("conversations");
+		emit getBasicInformationResponse(false, QJsonValue(data));
+	}
 
-					break;
-				}
-			}
+	reply->close();
+	reply->deleteLater();
+}
+
+QJsonArray QFbMessenger::parseInitialChatFriendsList(const QString& response){
+	QString json = this->getMatch("\\(require\\(\"ServerJSDefine\"\\)\\).handleDefines\\((.*)\\);require\\(\"InitialJSLoader\"\\)", response);
+	QJsonDocument document(QJsonDocument::fromJson(json.toUtf8()));
+	QJsonArray array = document.array();
+
+	for(QJsonArray::iterator it= array.begin(); it != array.end(); it++){
+		if(!(*it).isArray())
+			continue;
+
+		QJsonArray option = (*it).toArray();
+		if(option.first().toString() == "InitialChatFriendsList")
+			return option[2].toObject().value("list").toArray();
+	}
+
+	return QJsonArray();
+}
+
+QJsonArray QFbMessenger::parseLastConversations(const QString& response){
+	QString json = this->getMatch("require\\(\"InitialJSLoader\"\\).handleServerJS\\((.*)\\);</script>", response);
+	QJsonDocument document(QJsonDocument::fromJson(json.toUtf8()));
+	QJsonArray requireArray = document.object().value("require").toArray();
+
+	for(QJsonArray::iterator it= requireArray.begin(); it != requireArray.end(); it++){
+		if(!(*it).isArray())
+			continue;
+
+		QJsonArray option = (*it).toArray();
+		if(option.first().toString() == "MessengerMount")
+			return option[3].toArray()[1].toObject().value("mercuryPayload").toObject().value("threads").toArray();
+	}
+
+	return QJsonArray();
+}
+
+void QFbMessenger::parseDtsg(const QString& response){
+	QString json = this->getMatch("\\(require\\(\"ServerJSDefine\"\\)\\).handleDefines\\((.*)\\);new \\(require\\(\"ServerJS\"", response);
+	//qDebug() << "json text...\n" << json;
+	QJsonDocument document(QJsonDocument::fromJson(json.toUtf8()));
+	QJsonArray array = document.array();
+
+	for(QJsonArray::iterator it= array.begin(); it != array.end(); it++){
+		if(!(*it).isArray())
+			continue;
+
+		QJsonArray option = (*it).toArray();
+		if(option.first().toString() == "DTSGInitialData"){
+			this->dtsg = option[2].toObject().value("token").toString();
+			break;
 		}
+	}
 
-		emit loginResponse(false, "");
+	qDebug() << "new dtsg val: " << this->dtsg;
+}
+
+QJsonValue QFbMessenger::parseProfiles(const QString& response){
+	QJsonDocument document(QJsonDocument::fromJson(response.toUtf8()));
+	return document.object().value("payload").toObject().value("profiles");
+}
+
+void QFbMessenger::getUserInfo(const QJsonArray& ids){
+	QUrlQuery query;
+	int i=0;
+	for(QJsonArray::const_iterator it=ids.begin(); it != ids.end(); it++, i++)
+		query.addQueryItem(QString("ids[%1]").arg(i), (*it).toString().split("-").at(0));
+
+	query.addQueryItem("__a", "1");
+	query.addQueryItem("fb_dtsg", this->dtsg);
+
+	QNetworkReply* reply = this->createRequest(FB_USERINFO_ENDPOINT, &query, QFbMessenger::Post);
+	QSignalMapper *mapper = new QSignalMapper(reply);
+	connect(reply, SIGNAL(finished()), mapper, SLOT(map()));
+	mapper->setMapping(reply, reply);
+	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(getUserInfoFinished(QObject*)));
+}
+
+void QFbMessenger::getUserInfoFinished(QObject* obj){
+	QNetworkReply* reply = qobject_cast<QNetworkReply*>(obj);
+	QNetworkReply::NetworkError err = reply->error();
+
+	if(err != QNetworkReply::NoError){
+		qDebug() << "Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
+		emit getUserInfoResponse(true, QJsonValue(reply->errorString()));
+	}else{
+		QString response = QString(reply->readAll()).remove(0, 9);
+		//qDebug() << "Response...\n" << response;
+		emit getUserInfoResponse(false, this->parseProfiles(response));
 	}
 
 	reply->close();

@@ -8,27 +8,57 @@
 #include <QSettings>
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
-
+#include <QJsonArray>
+#include <QJsonObject>
 
 class QFbMessenger : public QObject {
 		Q_OBJECT
 
 	public:
 		explicit QFbMessenger(QObject *parent = 0);
+
+		/** Initialices facebook variables (and cookies):
+		 *   * requestId
+		 *   * identifier
+		 *   * jsDatr
+		 *   * lsd
+		 */
 		Q_INVOKABLE void init();
-		Q_INVOKABLE void login(const QString &user, const QString &pass);
-		Q_INVOKABLE void getConversations();
+
+		/** Performs Login, init must be called previously
+		 * @param email: fb email
+		 * @param pass: fb password
+		 */
+		Q_INVOKABLE void login(const QString &email, const QString &pass);
+
+		/** Gets lasts conversations (MessengerMount) and friend list (InitialChatFriendsList)
+		 * y DTSGInitialData
+		 */
+		Q_INVOKABLE void getBasicInformation();
+
+		Q_INVOKABLE void getUserInfo(const QJsonArray& ids);
 
 	signals:
 		void initResponse(bool error, QString desc);
 		void loginResponse(bool error, QString desc);
-		void getConversationsResponse(bool error, QString desc);
+		
+		/** Data: {
+		 * conversations: []
+		 * friendsList: []
+		 * }
+		 */
+		void getBasicInformationResponse(bool error, QJsonValue data);
 
-	public slots:
+		/**
+		 * data: { <user id>: {}, ... }
+		 */
+		void getUserInfoResponse(bool error, QJsonValue data);
+
+	protected slots:
 		void initFinished(QObject* o);
 		void loginFinished(QObject* o);
-		void getConversationsFinished(QObject* o);
-
+		void getBasicInformationFinished(QObject* o);
+		void getUserInfoFinished(QObject* o);
 
 	protected:
 		enum RequestMethod {
@@ -48,10 +78,17 @@ class QFbMessenger : public QObject {
 		void getJsDatr(const QString&);
 		void getLsd(const QString&);
 
+		QJsonArray parseLastConversations(const QString& response);
+		QJsonArray parseInitialChatFriendsList(const QString& response);
+		void parseDtsg(const QString& response);
+
+		QJsonValue parseProfiles(const QString& response);
+
 		QString requestId;
 		QString identifier;
 		QString jsDatr;
 		QString lsd;
+		QString dtsg;
 
 		QString email;
 };
