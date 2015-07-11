@@ -1,9 +1,9 @@
 #include <QCoreApplication>
-#include "console.h"
+#include "basic_client.h"
 
 int main(int argc, char* argv[]){
 	QCoreApplication app(argc, argv);
-	Console console;
+	BasicClient console;
 	console.run();
 	QObject::connect(&console, SIGNAL(quit()), &app, SLOT(quit()));
 	return app.exec();

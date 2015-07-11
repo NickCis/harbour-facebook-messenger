@@ -38,6 +38,10 @@ class QFbMessenger : public QObject {
 
 		Q_INVOKABLE void getUserInfo(const QJsonArray& ids);
 
+		Q_INVOKABLE void getThreadInfo(const QString& id, int offset=0, int limit=20);
+
+		Q_INVOKABLE void sendMessages(const QString& id, const QString& msg);
+
 	signals:
 		void initResponse(bool error, QString desc);
 		void loginResponse(bool error, QString desc);
@@ -54,11 +58,17 @@ class QFbMessenger : public QObject {
 		 */
 		void getUserInfoResponse(bool error, QJsonValue data);
 
+		void getThreadInfoResponse(bool error, QJsonValue data);
+
+		void sendMessagesResponse(bool error, QJsonValue data);
+
 	protected slots:
 		void initFinished(QObject* o);
 		void loginFinished(QObject* o);
 		void getBasicInformationFinished(QObject* o);
 		void getUserInfoFinished(QObject* o);
+		void getThreadInfoFinished(QObject* o);
+		void sendMessagesFinished(QObject* o);
 
 	protected:
 		enum RequestMethod {
@@ -83,6 +93,9 @@ class QFbMessenger : public QObject {
 		void parseDtsg(const QString& response);
 
 		QJsonValue parseProfiles(const QString& response);
+		QJsonValue parseThread(const QString& response);
+
+		void getUserIdFromCookies();
 
 		QString requestId;
 		QString identifier;
@@ -91,6 +104,7 @@ class QFbMessenger : public QObject {
 		QString dtsg;
 
 		QString email;
+		QString userId;
 };
 
 #endif

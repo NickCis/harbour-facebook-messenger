@@ -19,6 +19,8 @@
 #define FB_LOGIN_ENDPOINT "login/password/"
 #define FB_CONVERSATIONS_ENDPOINT "/"
 #define FB_USERINFO_ENDPOINT "chat/user_info/"
+#define FB_THREADINFO_ENDPOINT "ajax/mercury/thread_info.php"
+#define FB_SEND_MESSAGES_ENDPOINT "ajax/mercury/send_messages.php"
 
 #define FB_COOKIE_DOMAIN ".messenger.com"
 #define FB_COOKIE_PATH "/"
@@ -33,7 +35,8 @@ QFbMessenger::QFbMessenger(QObject *parent) :
 	requestId(""),
 	identifier(""),
 	jsDatr(""),
-	lsd("")
+	lsd(""),
+	userId("")
 {
 	qDebug() << "Init QFbMessenger: ";
 }
@@ -151,7 +154,7 @@ void QFbMessenger::getLsd(const QString& response){
 }
 
 void QFbMessenger::login(const QString &email, const QString &pass){
-	qDebug() << "Login: user: " << email << " no password printing :)" /*<< pass*/;
+	qDebug() << __func__ << "Login: user: " << email << " no password printing :)" /*<< pass*/;
 	this->email = email;
 
 	QUrlQuery query;
@@ -168,16 +171,31 @@ void QFbMessenger::login(const QString &email, const QString &pass){
 	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(loginFinished(QObject*)));
 }
 
+void QFbMessenger::getUserIdFromCookies(){
+	QString urlStr = QString("%1://%2/").arg(FB_PROTOCOL).arg(FB_HOST);
+	QList<QNetworkCookie> cookies = this->man.cookieJar()->cookiesForUrl(QUrl(urlStr));
+	qDebug() << __func__ << " cookies for " << urlStr << " " << cookies;
+	for(QList<QNetworkCookie>::const_iterator it=cookies.begin(); it != cookies.end(); it++){
+		if(QString((*it).name()) == "c_user"){
+			this->userId = QString((*it).value());
+			qDebug() << __func__ << " new userId: " << this->userId;
+			break;
+		}
+	}
+}
+
 void QFbMessenger::loginFinished(QObject* obj){
 	QNetworkReply* reply = qobject_cast<QNetworkReply*>(obj);
 	QNetworkReply::NetworkError err = reply->error();
 
 	if(err != QNetworkReply::NoError){
-		qDebug() << "Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
+		qDebug() << __func__ << " Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
 		emit loginResponse(true, reply->errorString());
 	}else{
+		// TODO: check if correct
 		QString response = QString(reply->readAll());
-		//qDebug() << "Login response...\n" << response << '\n';
+		this->getUserIdFromCookies();
+		//qDebug() << __func__ << " response...\n" << response << '\n';
 		emit loginResponse(false, "");
 	}
 
@@ -202,7 +220,7 @@ void QFbMessenger::getBasicInformationFinished(QObject* obj){
 		emit getBasicInformationResponse(true, QJsonValue(reply->errorString()));
 	}else{
 		QString response = QString(reply->readAll());
-		//qDebug() << "GetConversations response...\n" << response << '\n';
+		//qDebug() << __func__ << " response...\n" << response << '\n';
 		this->parseDtsg(response);
 		QJsonObject data;
 		data.insert("friendsList", QJsonValue(this->parseInitialChatFriendsList(response)));
@@ -275,6 +293,11 @@ QJsonValue QFbMessenger::parseProfiles(const QString& response){
 	return document.object().value("payload").toObject().value("profiles");
 }
 
+QJsonValue QFbMessenger::parseThread(const QString& response){
+	QJsonDocument document(QJsonDocument::fromJson(response.toUtf8()));
+	return document.object().value("payload");
+}
+
 void QFbMessenger::getUserInfo(const QJsonArray& ids){
 	QUrlQuery query;
 	int i=0;
@@ -302,6 +325,76 @@ void QFbMessenger::getUserInfoFinished(QObject* obj){
 		QString response = QString(reply->readAll()).remove(0, 9);
 		//qDebug() << "Response...\n" << response;
 		emit getUserInfoResponse(false, this->parseProfiles(response));
+	}
+
+	reply->close();
+	reply->deleteLater();
+}
+
+void QFbMessenger::getThreadInfo(const QString& id, int offset, int limit){
+	QUrlQuery query;
+	query.addQueryItem("__a", "1");
+	query.addQueryItem("fb_dtsg", this->dtsg);
+	query.addQueryItem(QString("messages[user_ids][%1][limit]").arg(id), QString::number(limit));
+	query.addQueryItem(QString("messages[user_ids][%1][offset]").arg(id), QString::number(offset));
+	query.addQueryItem(QString("messages[user_ids][%1][timestamp]").arg(id), "0");
+
+	qDebug() << query.toString();
+
+	QNetworkReply* reply = this->createRequest(FB_THREADINFO_ENDPOINT, &query, QFbMessenger::Post);
+	QSignalMapper *mapper = new QSignalMapper(reply);
+	connect(reply, SIGNAL(finished()), mapper, SLOT(map()));
+	mapper->setMapping(reply, reply);
+	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(getThreadInfoFinished(QObject*)));
+}
+
+void QFbMessenger::getThreadInfoFinished(QObject* obj){
+	QNetworkReply* reply = qobject_cast<QNetworkReply*>(obj);
+	QNetworkReply::NetworkError err = reply->error();
+
+	if(err != QNetworkReply::NoError){
+		qDebug() << "Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
+		emit getUserInfoResponse(true, QJsonValue(reply->errorString()));
+	}else{
+		QString response = QString(reply->readAll()).remove(0, 9);
+		//qDebug() << "Response...\n" << response;
+		emit getThreadInfoResponse(false, this->parseThread(response));
+	}
+
+	reply->close();
+	reply->deleteLater();
+}
+
+void QFbMessenger::sendMessages(const QString& id, const QString& msg){
+	QUrlQuery query;
+	query.addQueryItem("__a", "1");
+	query.addQueryItem("fb_dtsg", this->dtsg);
+	query.addQueryItem("message_batch[0][action_type]", "ma-type:user-generated-message");
+	query.addQueryItem("message_batch[0][body]", msg);
+	query.addQueryItem("message_batch[0][source]", "source:messenger:web");
+	query.addQueryItem("message_batch[0][specific_to_list][0]", QString("fbid:%1").arg(id));
+	query.addQueryItem("message_batch[0][specific_to_list][1]", QString("fbid:%1").arg(this->userId));
+
+	qDebug() << query.toString();
+
+	QNetworkReply* reply = this->createRequest(FB_SEND_MESSAGES_ENDPOINT, &query, QFbMessenger::Post);
+	QSignalMapper *mapper = new QSignalMapper(reply);
+	connect(reply, SIGNAL(finished()), mapper, SLOT(map()));
+	mapper->setMapping(reply, reply);
+	connect(mapper, SIGNAL(mapped(QObject*)), this, SLOT(sendMessagesFinished(QObject*)));
+}
+
+void QFbMessenger::sendMessagesFinished(QObject* obj){
+	QNetworkReply* reply = qobject_cast<QNetworkReply*>(obj);
+	QNetworkReply::NetworkError err = reply->error();
+
+	if(err != QNetworkReply::NoError){
+		qDebug() << __func__ << " Request Failed! n: " << err << " str: '" << reply->errorString() << "'";
+		emit getUserInfoResponse(true, QJsonValue(reply->errorString()));
+	}else{
+		QString response = QString(reply->readAll()).remove(0, 9);
+		qDebug() << "Response...\n" << response;
+		emit sendMessagesResponse(false, QJsonValue());
 	}
 
 	reply->close();
