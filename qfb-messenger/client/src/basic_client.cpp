@@ -18,6 +18,7 @@ BasicClient::BasicClient() {
 	connect(&qfb, SIGNAL(getUserInfoResponse(bool, QJsonValue)), this, SLOT(getUserInfoResponse(bool, QJsonValue)));
 	connect(&qfb, SIGNAL(getThreadInfoResponse(bool, QJsonValue)), this, SLOT(getThreadInfoResponse(bool, QJsonValue)));
 	connect(&qfb, SIGNAL(sendMessagesResponse(bool, QJsonValue)), this, SLOT(sendMessagesResponse(bool, QJsonValue)));
+	connect(&qfb, SIGNAL(pullResponse(bool, QJsonValue)), this, SLOT(pullResponse(bool, QJsonValue)));
 }
 
 void BasicClient::initResponse(bool error, QString desc){
@@ -73,6 +74,15 @@ void BasicClient::getThreadInfoResponse(bool error, QJsonValue data){
 			cout << "\t " << this->getUsername(obj.value("author").toString()) << ": ";
 			cout << obj.value("body").toString().toStdString() << endl;
 		}
+	}
+	this->setStatus(Console::Default);
+}
+
+void BasicClient::pullResponse(bool error, QJsonValue data){
+	if(error){
+		cout << __func__ << " failed!" << endl;
+	}else{
+		cout << __func__ << " :: ok!" << endl;
 	}
 	this->setStatus(Console::Default);
 }
@@ -158,9 +168,14 @@ void BasicClient::executeCommand(const string& line) {
 		if(list.count() < 3){
 			cout << "send <conversation id> <message>" << endl;
 		}else{
-			qfb.sendMessages(list[1], list[2]);
+			QString to = list[1];
+			list.pop_front();
+			list.pop_front();
+			qfb.sendMessages(to, list.join(' '));
 			this->setStatus(Console::Input);
 		}
+	}else if(qline.startsWith("pull")){
+		qfb.pull();
 	}
 }
 

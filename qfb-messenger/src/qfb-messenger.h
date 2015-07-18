@@ -2,14 +2,14 @@
 #define __QFB_MESSENGER_H__
 
 #include <QObject>
-#include <QUrl>
-#include <QUrlQuery>
 #include <QVariant>
 #include <QSettings>
-#include <QNetworkReply>
-#include <QNetworkAccessManager>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QByteArray>
+#include <QNetworkReply>
+
+#include "network_manager.h"
 
 class QFbMessenger : public QObject {
 		Q_OBJECT
@@ -42,6 +42,8 @@ class QFbMessenger : public QObject {
 
 		Q_INVOKABLE void sendMessages(const QString& id, const QString& msg);
 
+		Q_INVOKABLE void pull();
+
 	signals:
 		void initResponse(bool error, QString desc);
 		void loginResponse(bool error, QString desc);
@@ -62,25 +64,20 @@ class QFbMessenger : public QObject {
 
 		void sendMessagesResponse(bool error, QJsonValue data);
 
+		void pullResponse(bool error, QJsonValue data);
+
 	protected slots:
-		void initFinished(QObject* o);
-		void loginFinished(QObject* o);
-		void getBasicInformationFinished(QObject* o);
-		void getUserInfoFinished(QObject* o);
-		void getThreadInfoFinished(QObject* o);
-		void sendMessagesFinished(QObject* o);
+		void initFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void loginFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void getBasicInformationFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void getUserInfoFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void getThreadInfoFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void sendMessagesFinished(QNetworkReply::NetworkError, const QByteArray&);
+		void pullMessage(const QByteArray&);
+		void pullFinished();
 
 	protected:
-		enum RequestMethod {
-			Get = 0,
-			Post,
-			Delete
-		};
-
-		QNetworkAccessManager man;
-
-		QNetworkReply* createRequest(const QString& node);
-		QNetworkReply* createRequest(const QString& node, QUrlQuery* query, QFbMessenger::RequestMethod method);
+		NetworkManager man;
 
 		QString getMatch(const QString& regexp, const QString& text);
 		void getRequestId(const QString&);
@@ -97,6 +94,9 @@ class QFbMessenger : public QObject {
 
 		void getUserIdFromCookies();
 
+		QString generateCb();
+		QString generateSessionId();
+
 		QString requestId;
 		QString identifier;
 		QString jsDatr;
@@ -105,6 +105,11 @@ class QFbMessenger : public QObject {
 
 		QString email;
 		QString userId;
+
+		QString pullSeq;
+		QString sessionId;
+		QString stickyToken;
+		QString stickyPool;
 };
 
 #endif

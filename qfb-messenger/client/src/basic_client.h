@@ -35,6 +35,7 @@ class BasicClient : public Console {
 		void getUserInfoResponse(bool error, QJsonValue data);
 		void getThreadInfoResponse(bool error, QJsonValue data);
 		void sendMessagesResponse(bool error, QJsonValue data);
+		void pullResponse(bool error, QJsonValue data);
 
 		std::string getUsername(const QString& fbid);
 };
