@@ -3,8 +3,6 @@ DESTDIR = ../bin
 
 CONFIG += console
 
-INCLUDEPATH += $$PWD/../common/src/
-LIBS += -L../common -lcommon
 
 INCLUDEPATH += $$PWD/../../src/
 LIBS += -L../../lib/ -lqfb-messenger
@@ -12,4 +10,8 @@ LIBS += -L../../lib/ -lqfb-messenger
 QT += core network
 QT -= gui
 
-SOURCES = src/fb_client.cpp src/main.cpp
+INCLUDEPATH += $$PWD/../common/src/
+LIBS += -L../common -lcommon
+
+HEADERS = src/fb_client.h
+SOURCES =  src/fb_client.cpp src/main.cpp

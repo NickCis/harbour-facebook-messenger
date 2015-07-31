@@ -5,7 +5,7 @@
 #include "qfb-network.h"
 
 class BasicClient : public Console {
-	Q_OBJECT
+	//Q_OBJECT
 
 	public:
 		BasicClient(QObject* parent = NULL);
@@ -19,6 +19,8 @@ class BasicClient : public Console {
 		QJsonObject profiles;
 		void executeCommand(const std::string& line);
 		void input(const std::string& line);
+
+		std::string getUsername(const QString& fbid);
 
 	private:
 		typedef enum {
@@ -37,7 +39,6 @@ class BasicClient : public Console {
 		void sendMessagesResponse(bool error, QJsonValue data);
 		void pullResponse(bool error, QJsonValue data);
 
-		std::string getUsername(const QString& fbid);
 };
 
 #endif
