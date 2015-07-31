@@ -26,10 +26,14 @@ class NetworkManager : public QNetworkAccessManager {
 		void setHost(const QString&);
 		void setProtocol(const QString&);
 		void setUserAgent(const QString&);
-		const QString& getHost();
-		const QString& getProtocol();
-		const QString& getUserAgent();
+		const QString& getHost() const;
+		const QString& getProtocol() const;
+		const QString& getUserAgent() const;
 
+		void setCookie(const QByteArray& name, const QByteArray& value, const QString& path, const QString& domain, bool httpOnly=true, bool secure=true);
+		void setCookie(const QString& name, const QString& value, const QString& path, const QString& domain, bool httpOnly=true, bool secure=true);
+
+		QString getCookie(const QString& name, const QString& url=QString());
 
 	protected:
 		QString protocol;

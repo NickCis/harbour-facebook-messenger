@@ -61,14 +61,36 @@ void NetworkManager::setUserAgent(const QString& ua){
 	this->userAgent = ua;
 }
 
-const QString& NetworkManager::getHost(){
+const QString& NetworkManager::getHost() const{
 	return this->host;
 }
 
-const QString& NetworkManager::getProtocol(){
+const QString& NetworkManager::getProtocol() const{
 	return this->protocol;
 }
 
-const QString& NetworkManager::getUserAgent(){
+const QString& NetworkManager::getUserAgent() const{
 	return this->userAgent;
+}
+
+void NetworkManager::setCookie(const QString& name, const QString& value, const QString& path, const QString& domain, bool httpOnly, bool secure){
+	this->setCookie(name.toUtf8(), value.toUtf8(), path, domain, httpOnly, secure);
+}
+void NetworkManager::setCookie(const QByteArray& name, const QByteArray& value, const QString& path, const QString& domain, bool httpOnly, bool secure){
+	QNetworkCookie cookie(name, value);
+	cookie.setHttpOnly(httpOnly);
+	cookie.setSecure(secure);
+	cookie.setPath(path);
+	cookie.setDomain(domain);
+	this->cookieJar()->insertCookie(cookie);
+}
+
+QString NetworkManager::getCookie(const QString& name, const QString& url){
+	QList<QNetworkCookie> cookies = this->cookieJar()->cookiesForUrl(QUrl(url.size() ? url : QString("%1://%2/").arg(this->protocol).arg(this->host)));
+
+	for(QList<QNetworkCookie>::const_iterator it=cookies.begin(); it != cookies.end(); it++)
+		if(QString((*it).name()) == name)
+			return QString((*it).value());
+
+	return QString("");
 }

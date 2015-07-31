@@ -7,109 +7,50 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QByteArray>
-#include <QNetworkReply>
 
-#include "network_manager.h"
+#include "qfb-network.h"
+#include "qfb-storage.h"
 
+/** This class provides a nice facade to use QFb in QML projects.
+ * The idea is to export this class to the QML instance.
+ */
 class QFbMessenger : public QObject {
-		Q_OBJECT
+	Q_OBJECT
+	Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged);
 
 	public:
-		explicit QFbMessenger(QObject *parent = 0);
+		explicit QFbMessenger(QFbStorage*, QObject *parent = 0);
 
-		/** Initialices facebook variables (and cookies):
-		 *   * requestId
-		 *   * identifier
-		 *   * jsDatr
-		 *   * lsd
+		/** Connects using the stored data
 		 */
-		Q_INVOKABLE void init();
+		Q_INVOKABLE void login();
 
-		/** Performs Login, init must be called previously
-		 * @param email: fb email
-		 * @param pass: fb password
+		/** Connects using the provided information
 		 */
 		Q_INVOKABLE void login(const QString &email, const QString &pass);
 
-		/** Gets lasts conversations (MessengerMount) and friend list (InitialChatFriendsList)
-		 * y DTSGInitialData
-		 */
-		Q_INVOKABLE void getBasicInformation();
-
-		Q_INVOKABLE void getUserInfo(const QJsonArray& ids);
-
-		Q_INVOKABLE void getThreadInfo(const QString& id, int offset=0, int limit=20);
-
-		Q_INVOKABLE void sendMessages(const QString& id, const QString& msg);
-
-		Q_INVOKABLE void pull();
+		bool isConnected() const;
 
 	signals:
-		void initResponse(bool error, QString desc);
+		/** Signal triggered when the login phase ended
+		 */
 		void loginResponse(bool error, QString desc);
-		
-		/** Data: {
-		 * conversations: []
-		 * friendsList: []
-		 * }
-		 */
-		void getBasicInformationResponse(bool error, QJsonValue data);
-
-		/**
-		 * data: { <user id>: {}, ... }
-		 */
-		void getUserInfoResponse(bool error, QJsonValue data);
-
-		void getThreadInfoResponse(bool error, QJsonValue data);
-
-		void sendMessagesResponse(bool error, QJsonValue data);
-
-		void pullResponse(bool error, QJsonValue data);
+		void connectedChanged(bool connected);
 
 	protected slots:
-		void initFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void loginFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void getBasicInformationFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void getUserInfoFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void getThreadInfoFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void sendMessagesFinished(QNetworkReply::NetworkError, const QByteArray&);
-		void pullMessage(const QByteArray&);
-		void pullFinished();
+		void networkInitAnswer(bool error, QString desc);
+		void networkLoginAnswer(bool error, QString desc);
+		void networkGetBasicInformationAnswer(bool error, QJsonValue data);
+		void setConnected(bool);
+		void networkNewConfigurationValue(const QString&, const QString&);
 
 	protected:
-		NetworkManager man;
-
-		QString getMatch(const QString& regexp, const QString& text);
-		void getRequestId(const QString&);
-		void getIdentifier(const QString&);
-		void getJsDatr(const QString&);
-		void getLsd(const QString&);
-
-		QJsonArray parseLastConversations(const QString& response);
-		QJsonArray parseInitialChatFriendsList(const QString& response);
-		void parseDtsg(const QString& response);
-
-		QJsonValue parseProfiles(const QString& response);
-		QJsonValue parseThread(const QString& response);
-
-		void getUserIdFromCookies();
-
-		QString generateCb();
-		QString generateSessionId();
-
-		QString requestId;
-		QString identifier;
-		QString jsDatr;
-		QString lsd;
-		QString dtsg;
-
+		QFbStorage* storage;
+		QFbNetwork network;
 		QString email;
-		QString userId;
-
-		QString pullSeq;
-		QString sessionId;
-		QString stickyToken;
-		QString stickyPool;
+		QString pass;
+		bool connected;
 };
+
 
 #endif

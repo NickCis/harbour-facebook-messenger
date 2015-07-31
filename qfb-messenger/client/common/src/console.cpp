@@ -6,7 +6,8 @@
 
 using namespace std;
 
-Console::Console() :
+Console::Console(QObject* parent) :
+	QObject(parent),
 	title("Console"),
 	commandLine("> "),
 	status(Console::Default)

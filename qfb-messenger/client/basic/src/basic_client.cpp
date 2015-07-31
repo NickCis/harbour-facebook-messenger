@@ -10,7 +10,7 @@
 
 using namespace std;
 
-BasicClient::BasicClient() {
+BasicClient::BasicClient(QObject* parent) : Console(parent) {
 	this->title = "QFb Messenger Client";
 	connect(&qfb, SIGNAL(initResponse(bool, QString)), this, SLOT(initResponse(bool, QString)));
 	connect(&qfb, SIGNAL(loginResponse(bool, QString)), this, SLOT(loginResponse(bool, QString)));
@@ -47,7 +47,7 @@ void BasicClient::getBasicInformationResponse(bool error, QJsonValue data){
 		this->friendsList = data.toObject().value("friendsList").toArray();
 		this->conversations = data.toObject().value("conversations").toArray();
 
-		cout << QString(QJsonDocument(this->conversations).toJson()).toStdString();
+		//cout << QString(QJsonDocument(this->conversations).toJson()).toStdString();
 	}
 	this->setStatus(Console::Default);
 }

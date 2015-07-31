@@ -2,16 +2,16 @@
 #define __BASIC_CLIENT_H__
 
 #include "console.h"
-#include "qfb-messenger.h"
+#include "qfb-network.h"
 
 class BasicClient : public Console {
 	Q_OBJECT
 
 	public:
-		BasicClient();
+		BasicClient(QObject* parent);
 
 	protected:
-		QFbMessenger qfb;
+		QFbNetwork qfb;
 		QString email;
 
 		QJsonArray friendsList;

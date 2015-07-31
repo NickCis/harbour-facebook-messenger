@@ -9,7 +9,7 @@ class Console : public QObject {
 	Q_OBJECT
 
 	public:
-		Console();
+		Console(QObject* parent=NULL);
 		virtual void run();
 
 	signals:
