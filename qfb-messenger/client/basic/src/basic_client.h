@@ -8,7 +8,7 @@ class BasicClient : public Console {
 	Q_OBJECT
 
 	public:
-		BasicClient(QObject* parent);
+		BasicClient(QObject* parent = NULL);
 
 	protected:
 		QFbNetwork qfb;
