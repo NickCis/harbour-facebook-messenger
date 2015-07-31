@@ -71,5 +71,9 @@ void FbClient::executeCommand(const string& line) {
 			this->hideStdinKeyStrokes();
 			this->setStatus(Console::Input);
 		}
+	}else if(qline.startsWith("pullStart")){
+		this->qfb.startPull();
+	}else if(qline.startsWith("pullEnd")){
+		this->qfb.stopPull();
 	}
 }

@@ -395,6 +395,7 @@ void QFbNetwork::pullMessage(const QByteArray& data){
 
 void QFbNetwork::pullFinished(){
 	qDebug() << "pull finished" ;
+	emit pullEnd();
 }
 
 QString QFbNetwork::generateCb(){

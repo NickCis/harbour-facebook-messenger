@@ -1,11 +1,14 @@
 #include "qfb-messenger.h"
+#include <QTimer>
+#include <QDebug>
 
 QFbMessenger::QFbMessenger(QFbStorage* s, QObject *parent) : 
 	QObject(parent),
 	storage(s),
 	email(""),
 	pass(""),
-	connected(false)
+	connected(false),
+	pulling(false)
 {
 	connect(&this->network, SIGNAL(initResponse(bool, QString)), this, SLOT(networkInitAnswer(bool, QString)));
 	connect(&this->network, SIGNAL(loginResponse(bool, QString)), this, SLOT(networkLoginAnswer(bool, QString)));
@@ -14,6 +17,7 @@ QFbMessenger::QFbMessenger(QFbStorage* s, QObject *parent) :
 	//connect(&this->network, SIGNAL(getThreadInfoResponse(bool, QJsonValue)), this, SLOT(networkInitAnswer(bool, QJsonValue)));
 	//connect(&this->network, SIGNAL(sendMessagesResponse(bool, QJsonValue)), this, SLOT(networkInitAnswer(bool, QJsonValue)));
 	//connect(&this->network, SIGNAL(pullResponse(bool, QJsonValue)), this, SLOT(networkInitAnswer(bool, QJsonValue)));
+	connect(&this->network, SIGNAL(pullEnd()), this, SLOT(networkPullEnd()));
 	connect(&this->network, SIGNAL(newConfigurationValue(const QString&, const QString&)), this, SLOT(networkNewConfigurationValue(const QString&, const QString&)));
 }
 
@@ -80,4 +84,27 @@ void QFbMessenger::networkNewConfigurationValue(const QString& name, const QStri
 
 bool QFbMessenger::isConnected() const{
 	return this->connected;
+}
+
+void QFbMessenger::startPull(){
+	this->pulling = true;
+	this->network.pull();
+}
+
+void QFbMessenger::stopPull(){
+	this->pulling = false;
+}
+
+void QFbMessenger::networkPullEnd(){
+	qDebug() << "Pull ended";
+	QTimer::singleShot(5000, this, SLOT(sendPullRequest()));
+}
+
+void QFbMessenger::sendPullRequest(){
+	qDebug() << "need to pull";
+	if(!this->pulling)
+		return;
+
+	qDebug() << "send pull";
+	this->network.pull();
 }

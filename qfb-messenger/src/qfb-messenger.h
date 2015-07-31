@@ -29,6 +29,9 @@ class QFbMessenger : public QObject {
 		 */
 		Q_INVOKABLE void login(const QString &email, const QString &pass);
 
+		Q_INVOKABLE void startPull();
+		Q_INVOKABLE void stopPull();
+
 		bool isConnected() const;
 
 	signals:
@@ -43,6 +46,8 @@ class QFbMessenger : public QObject {
 		void networkGetBasicInformationAnswer(bool error, QJsonValue data);
 		void setConnected(bool);
 		void networkNewConfigurationValue(const QString&, const QString&);
+		void networkPullEnd();
+		void sendPullRequest();
 
 	protected:
 		QFbStorage* storage;
@@ -50,6 +55,8 @@ class QFbMessenger : public QObject {
 		QString email;
 		QString pass;
 		bool connected;
+
+		bool pulling;
 };
 
 
