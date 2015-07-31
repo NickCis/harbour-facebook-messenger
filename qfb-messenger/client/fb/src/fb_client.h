@@ -9,7 +9,7 @@ class FbClient : public Console {
 	Q_OBJECT
 
 	public:
-		FbClient();
+		FbClient(QObject* parent=NULL);
 
 	protected:
 		DummyStorage dummyStorage;

@@ -3,13 +3,14 @@ DESTDIR = ../bin
 
 CONFIG += console
 
-INCLUDEPATH += $$PWD/../common/src/
-LIBS += -L../common -lcommon
-
 INCLUDEPATH += $$PWD/../../src/
 LIBS += -L../../lib/ -lqfb-messenger
 
 QT += core network
 QT -= gui
 
-SOURCES = src/main.cpp src/basic_client.cpp
+INCLUDEPATH += $$PWD/../common/src/
+LIBS += -L../common -lcommon
+
+HEADERS = src/basic_client.h
+SOURCES = src/basic_client.cpp src/main.cpp

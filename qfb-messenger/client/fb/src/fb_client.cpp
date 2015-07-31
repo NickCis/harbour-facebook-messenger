@@ -10,7 +10,8 @@
 
 using namespace std;
 
-FbClient::FbClient() :
+FbClient::FbClient(QObject* parent) :
+	Console(parent),
 	qfb(&this->dummyStorage)
 {
 	this->title = "QFb Messenger Client";

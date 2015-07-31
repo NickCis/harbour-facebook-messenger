@@ -5,10 +5,10 @@
 #include "qfb-network.h"
 
 class BasicClient : public Console {
-	//Q_OBJECT
+	Q_OBJECT
 
 	public:
-		BasicClient(QObject* parent = NULL);
+		BasicClient(QObject* parent=NULL);
 
 	protected:
 		QFbNetwork qfb;
