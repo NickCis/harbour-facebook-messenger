@@ -6,7 +6,14 @@ import QtWebKit.experimental 1.0
 
 Page {
     id: page
+    backNavigation: false
+    forwardNavigation: false
+    showNavigationIndicator: false
+    allowedOrientations: Orientation.All
+
     SilicaWebView {
+        id: webview
+        quickScroll: false
         url: "https://www.messenger.com/login"
         anchors.fill: parent
         overridePageStackNavigation: true
@@ -38,6 +45,20 @@ Page {
                     console.log("Unhandled type: "+data.type);
                     break;
             }
+        }
+
+        VerticalScrollDecorator {
+            color: Theme.highlightColor // Otherwise we might end up with white decorator on white background
+            width: Theme.paddingSmall // We want to see it properly
+            flickable: webview
+        }
+
+        HorizontalScrollDecorator {  // Yeah necessary for larger images and other large sites or zoomed in sites
+            parent: page
+            color: Theme.highlightColor // Otherwise we might end up with white decorator on white background
+            height: Theme.paddingSmall // We want to see it properly
+            flickable: webview
+            anchors.bottom: page.bottom
         }
     }
 }

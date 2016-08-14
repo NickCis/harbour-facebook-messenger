@@ -1,0 +1,1 @@
+curl -v -H "cookie: datr=XXXXXXXXXXXXXXXXXX; c_user=XXXXXXX; xs=XXXXXXXXXXXXXXXXXXX; csm=2; s=XXXXXXXXXXXXXXXXXX; lu=XXXXXXXXXXXXXX;" --data "messages[user_ids][1390082971][offset]=0&messages[user_ids][1390082971][timestamp]=0&messages[user_ids][1390082971][limit]=20&&__a=1&fb_dtsg=XXXXXXXXX" "https://www.messenger.com/ajax/mercury/thread_info.php"

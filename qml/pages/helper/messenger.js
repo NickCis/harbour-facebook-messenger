@@ -33,7 +33,7 @@
         isConversation = false;
     }
 
-    document.addEventListener('touchstart', function(ev){
+    /*document.addEventListener('touchstart', function(ev){
         if(ev.touches.length === 1)
             currentTouch = event.touches[0];
 
@@ -54,11 +54,11 @@
             if(distance[0] > 200)
                 showContactList();
         }else{
-            document.querySelector("[data-reactid='.0.1.$0.0.1.1.0.0']").scrollTop -= distance[1];
+            //document.querySelector("[data-reactid='.0.1.$0.0.1.1.0.0']").scrollTop -= distance[1];
             if(distance[0] < -200)
                 showConversation();
         }
-    }, false);
+    }, false);*/
 
     window.addEventListener('load', function(){
         console.log("cargue!");
@@ -68,6 +68,7 @@
             if(! ev.target.getAttribute('aria-haspopup'))
                 showConversation();
         }, false);
+
     }, false);
 })();
 
